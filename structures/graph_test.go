@@ -57,7 +57,7 @@ func Test_Graph(t *testing.T) {
 
 	t.Run("can convert an empty graph to an empty array", func(t *testing.T) {
 		graph := structures.Graph()
-		result := graph.ToArray(nil)
+		result := graph.ToArray()
 		assert.Equal(t, 0, len(result))
 	})
 
@@ -67,13 +67,8 @@ func Test_Graph(t *testing.T) {
 		vertex2 := graph.AddVertex("mary")
 		graph.AddEdge(vertex1, vertex2)
 
-		result := graph.ToArray(vertex1)
-		var names = []string{}
-		for _, vertex := range result {
-			names = append(names, vertex.GetValue())
-		}
-
-		assert.Equal(t, []string{"john", "mary"}, names)
+		result := graph.ToArray()
+		assert.Equal(t, 2, len(result))
 	})
 
 	t.Run("can convert complex graph to an array", func(t *testing.T) {
@@ -100,7 +95,33 @@ func Test_Graph(t *testing.T) {
 		graph.AddEdge(derek, gina)
 		graph.AddEdge(gina, irena)
 
-		result := graph.ToArray(alice)
+		result := graph.ToArray()
 		assert.Equal(t, 9, len(result))
+	})
+
+	t.Run("returns nil trying to search in an empty graph", func(t *testing.T) {
+		graph := structures.Graph()
+		result := graph.Search("alice")
+		assert.Nil(t, result)
+	})
+
+	t.Run("returns nil trying to search for a non existing value", func(t *testing.T) {
+		graph := structures.Graph()
+		vertex1 := graph.AddVertex("john")
+		vertex2 := graph.AddVertex("mary")
+		graph.AddEdge(vertex1, vertex2)
+
+		result := graph.Search("bob")
+		assert.Nil(t, result)
+	})
+
+	t.Run("returns the correct vertex trying to search for an existing value", func(t *testing.T) {
+		graph := structures.Graph()
+		vertex1 := graph.AddVertex("john")
+		vertex2 := graph.AddVertex("mary")
+		graph.AddEdge(vertex1, vertex2)
+
+		result := graph.Search("mary")
+		assert.Equal(t, result, vertex2)
 	})
 }

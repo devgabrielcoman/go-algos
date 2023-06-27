@@ -1,6 +1,7 @@
 package structures
 
 import (
+	"golang.org/x/exp/maps"
 	"golang.org/x/exp/slices"
 )
 
@@ -32,47 +33,70 @@ func (v *vertex) Add(adjacent *vertex) {
 	adjacent.Add(v)
 }
 
-type graph struct{}
+func (v *vertex) depth_first_traverse(visited map[*vertex]bool) {
+	visited[v] = true
+
+	for _, adjacent := range v.adjacent {
+		_, exists := visited[adjacent]
+		if !exists {
+			adjacent.depth_first_traverse(visited)
+		}
+	}
+}
+
+func (v *vertex) depth_first_search(value string, visited map[*vertex]bool) *vertex {
+	// found our target
+	if v.value == value {
+		return v
+	}
+
+	visited[v] = true
+
+	for _, adjacent := range v.adjacent {
+		_, exists := visited[adjacent]
+		if !exists {
+			return adjacent.depth_first_search(value, visited)
+		}
+	}
+
+	return nil
+}
+
+type graph struct {
+	last *vertex
+}
 
 func Graph() *graph {
-	return &graph{}
+	return &graph{
+		last: nil,
+	}
 }
 
 func (g *graph) AddVertex(value string) *vertex {
-	return Vertex(value)
+	new := Vertex(value)
+	g.last = new
+	return new
 }
 
 func (g *graph) AddEdge(start *vertex, end *vertex) {
 	start.Add(end)
 }
 
-func (g *graph) ToArray(start *vertex) []*vertex {
-	visited := make(map[*vertex]bool)
-	g.depth_first_search(start, visited)
-
-	var result = []*vertex{}
-	for key, _ := range visited {
-		result = append(result, key)
+func (g *graph) ToArray() []*vertex {
+	if g.last == nil {
+		return []*vertex{}
 	}
-	return result
+
+	visited := make(map[*vertex]bool)
+	g.last.depth_first_traverse(visited)
+	return maps.Keys(visited)
 }
 
-func (g *graph) depth_first_search(current *vertex, visited map[*vertex]bool) {
-	if current == nil {
-		return
+func (g *graph) Search(value string) *vertex {
+	if g.last == nil {
+		return nil
 	}
 
-	// end condition
-	_, exists := visited[current]
-	if exists {
-		return
-	}
-
-	// mark the current node as visited
-	visited[current] = true
-
-	// iterate over all the adjacent nodes
-	for _, adjacent := range current.adjacent {
-		g.depth_first_search(adjacent, visited)
-	}
+	visited := make(map[*vertex]bool)
+	return g.last.depth_first_search(value, visited)
 }
