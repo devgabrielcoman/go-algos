@@ -2,101 +2,153 @@ package structures
 
 import (
 	"golang.org/x/exp/maps"
-	"golang.org/x/exp/slices"
 )
 
-type vertex struct {
-	value    string
-	adjacent []*vertex
+type Vertex struct {
+	Value    string
+	Adjacent []*Vertex
 }
 
-func Vertex(value string) *vertex {
-	return &vertex{
-		value:    value,
-		adjacent: []*vertex{},
+func NewVertex(value string) *Vertex {
+	return &Vertex{
+		Value:    value,
+		Adjacent: []*Vertex{},
 	}
 }
 
-func (v *vertex) GetValue() string {
-	return v.value
+func (v *Vertex) Add(adjacent *Vertex) {
+	v.Adjacent = append(v.Adjacent, adjacent)
+	adjacent.Adjacent = append(adjacent.Adjacent, v)
 }
 
-func (v *vertex) GetAdjecent() []*vertex {
-	return v.adjacent
-}
-
-func (v *vertex) Add(adjacent *vertex) {
-	if slices.Contains(v.adjacent, adjacent) {
-		return
-	}
-	v.adjacent = append(v.adjacent, adjacent)
-	adjacent.Add(v)
-}
-
-func (v *vertex) depth_first_traverse(visited map[*vertex]bool) {
+func (v *Vertex) traverse_depth_first(visited map[*Vertex]bool) []*Vertex {
 	visited[v] = true
 
-	for _, adjacent := range v.adjacent {
+	for _, adjacent := range v.Adjacent {
 		_, exists := visited[adjacent]
 		if !exists {
-			adjacent.depth_first_traverse(visited)
+			adjacent.traverse_depth_first(visited)
 		}
 	}
+
+	return maps.Keys(visited)
 }
 
-func (v *vertex) depth_first_search(value string, visited map[*vertex]bool) *vertex {
-	// found our target
-	if v.value == value {
+func (v *Vertex) search_depth_first(value string, visited map[*Vertex]bool) *Vertex {
+	if v.Value == value {
 		return v
 	}
 
 	visited[v] = true
 
-	for _, adjacent := range v.adjacent {
+	for _, adjacent := range v.Adjacent {
 		_, exists := visited[adjacent]
 		if !exists {
-			return adjacent.depth_first_search(value, visited)
+			return adjacent.search_depth_first(value, visited)
 		}
 	}
 
 	return nil
 }
 
-type graph struct {
-	last *vertex
+func (v *Vertex) traverse_breadth_first(visited map[*Vertex]bool) []*Vertex {
+
+	visited[v] = true
+
+	queue := Queue[Vertex]()
+	queue.Enqueue(*v)
+
+	for !queue.IsEmpty() {
+		current := queue.Dequeue()
+		for _, adjacent := range current.Adjacent {
+			_, exists := visited[adjacent]
+			if !exists {
+				visited[adjacent] = true
+				queue.Enqueue(*adjacent)
+			}
+		}
+	}
+
+	return maps.Keys(visited)
 }
 
-func Graph() *graph {
-	return &graph{
+func (v *Vertex) searcH_breadth_first(value string, visited map[*Vertex]bool) *Vertex {
+	visited[v] = true
+
+	queue := Queue[Vertex]()
+	queue.Enqueue(*v)
+
+	for !queue.IsEmpty() {
+		current := queue.Dequeue()
+
+		if current.Value == value {
+			return current
+		}
+
+		for _, adjacent := range current.Adjacent {
+			_, exists := visited[adjacent]
+			if !exists {
+				visited[adjacent] = true
+				queue.Enqueue(*adjacent)
+			}
+		}
+	}
+
+	return nil
+}
+
+type Graph struct {
+	last *Vertex
+}
+
+func NewGraph() *Graph {
+	return &Graph{
 		last: nil,
 	}
 }
 
-func (g *graph) AddVertex(value string) *vertex {
-	new := Vertex(value)
+func (g *Graph) AddVertex(value string) *Vertex {
+	new := NewVertex(value)
 	g.last = new
 	return new
 }
 
-func (g *graph) AddEdge(start *vertex, end *vertex) {
+func (g *Graph) AddEdge(start *Vertex, end *Vertex) {
 	start.Add(end)
 }
 
-func (g *graph) ToArray() []*vertex {
+func (g *Graph) TraverseDeep() []*Vertex {
 	if g.last == nil {
-		return []*vertex{}
+		return []*Vertex{}
 	}
 
-	visited := make(map[*vertex]bool)
-	g.last.depth_first_traverse(visited)
-	return maps.Keys(visited)
+	visited := make(map[*Vertex]bool)
+	return g.last.traverse_depth_first(visited)
 }
 
-func (g *graph) Search(value string) *vertex {
+func (g *Graph) SearchDeep(value string) *Vertex {
 	if g.last == nil {
 		return nil
 	}
 
-	visited := make(map[*vertex]bool)
-	return g.last.depth_first_search(value, visited)
+	visited := make(map[*Vertex]bool)
+	return g.last.search_depth_first(value, visited)
+}
+
+func (g *Graph) TraverseWide() []*Vertex {
+	if g.last == nil {
+		return []*Vertex{}
+	}
+
+	visited := make(map[*Vertex]bool)
+	return g.last.traverse_breadth_first(visited)
+}
+
+func (g *Graph) SearchWide(value string) *Vertex {
+	if g.last == nil {
+		return nil
+	}
+
+	visited := make(map[*Vertex]bool)
+	return g.last.searcH_breadth_first(value, visited)
 }
